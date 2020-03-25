@@ -1,6 +1,9 @@
 package com.akshat;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Date;
 import java.util.Properties;
 
@@ -19,6 +22,7 @@ import javax.mail.internet.MimeMultipart;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class SendEmailService {
@@ -31,7 +35,7 @@ public class SendEmailService {
 	@Value("${password}")
 	private String password;
 
-	public void sendEmail(EmailMessage emailMessage) throws AddressException, MessagingException, IOException {
+	public void sendEmail(EmailMessage emailMessage,MultipartFile[] files) throws AddressException, MessagingException, IOException {
 		Properties pro = new Properties();
 		pro.put("mail.smtp.auth", "true");
 		pro.put("mail.smtp.starttls.enable", "true");
@@ -60,12 +64,27 @@ public class SendEmailService {
 		multipart.addBodyPart(messageBodyPart);
 		MimeBodyPart attachPart = new MimeBodyPart();
 		
-		attachPart.attachFile("/Users/akshatsharma/Desktop/FileuploadThree.txt");
-		multipart.addBodyPart(attachPart);
-		msg.setContent(multipart);
+		for(MultipartFile file : files) {
+			MimeBodyPart part = new MimeBodyPart();
+			File attachFile = convertMultiPartToFile(file);
+			part.attachFile(attachFile);
 		
+		
+		multipart.addBodyPart(part);
+		
+		}
+		msg.setContent(multipart);
 		Transport.send(msg);
 
 	}
 
+	private File convertMultiPartToFile(MultipartFile file ) throws IOException
+    {
+        File convFile = new File( file.getOriginalFilename() );
+        FileOutputStream fos = new FileOutputStream( convFile );
+        fos.write( file.getBytes() );
+        fos.close();
+        return convFile;
+    }
+	
 }
